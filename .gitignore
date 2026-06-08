@@ -2,5 +2,8 @@ node_modules/
 dist/
 build/icon.icns
 build/icons/
+src-tauri/target/
+src-tauri/icons/*.icns
+src-tauri/icons/*.ico
 *.log
 .DS_Store

@@ -337,9 +337,9 @@
       <div class="analytics-header">
         <span class="analytics-title">Analytics</span>
         <div class="range-tabs" id="range-tabs">
-          <button class="range-tab" data-days="7">7d</button>
-          <button class="range-tab active" data-days="30">30d</button>
-          <button class="range-tab" data-days="90">90d</button>
+          <button class="range-tab" data-days="1">24h</button>
+          <button class="range-tab active" data-days="7">7d</button>
+          <button class="range-tab" data-days="30">30d</button>
         </div>
       </div>
       <div id="charts-root">
@@ -360,7 +360,7 @@
     const PAL    = ['#0a84ff','#30d158','#ff9f0a','#bf5af2','#ff453a','#64d2ff','#ffd60a','#ff6b6b','#5e5ce6','#32d74b']
 
     let lastUpdatedAt = null
-    let currentDays = 30
+    let currentDays = 7
     let branchLimit = 10
     let showAnalytics = false
     let analyticsLoaded = false
@@ -500,7 +500,7 @@
       for (let i = days - 1; i >= 0; i--) {
         const d = new Date(today); d.setDate(d.getDate() - i)
         const key = d.toISOString().split('T')[0]
-        dlabels.push(days <= 14 ? key.slice(5) : (i % 7 === 0 || i === 0 ? key.slice(5) : ''))
+        dlabels.push(days <= 7 ? key.slice(5) : (i % 7 === 0 || i === 0 ? key.slice(5) : ''))
         dvals.push(byDay[key] || 0)
       }
 
