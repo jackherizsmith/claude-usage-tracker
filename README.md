@@ -66,7 +66,7 @@ The app reads your OAuth token from the same place Claude Code stores it:
 | Windows | `%USERPROFILE%\.claude\.credentials.json` |
 | Linux | `~/.claude/.credentials.json` |
 
-It then makes a minimal API call to Anthropic and reads the rate-limit response headers — the same technique used by [clawdmeter](https://github.com/nicholasgasior/clawdmeter). No data leaves your machine beyond that single API call.
+It then makes a minimal API call to Anthropic and reads the rate-limit response headers. No data leaves your machine beyond that single API call.
 
 ## Build from source
 
