@@ -22,12 +22,11 @@ The menu bar title shows `47% (70%)` — session % and weekly % at a glance.
 
 1. Download `Claude Usage-x.x.x-universal.dmg` from the [latest release](https://github.com/jackherizsmith/claude-usage-tracker/releases/latest)
 2. Open the DMG and drag **Claude Usage** to your Applications folder
-3. Right-click the app → **Open** (required on first launch since the app is unsigned)
-4. If macOS says "app is damaged": open Terminal and run:
+3. Open Terminal and run:
    ```
    sudo xattr -cr "/Applications/Claude Usage.app"
    ```
-   Then try opening again.
+4. Open the app — the Gatekeeper warning won't appear again after this
 
 The app lives in your menu bar and auto-starts on login.
 
