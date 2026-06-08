@@ -513,7 +513,7 @@
 
       root.innerHTML = `
         <div class="chart-card">
-          <div class="chart-title">Output tokens · daily</div>
+          <div class="chart-title">Output tokens · ${days === 1 ? 'hourly' : 'daily'}</div>
           <div class="chart-box"><canvas id="c-daily"></canvas></div>
         </div>
 
@@ -552,30 +552,56 @@
       `
 
       // 1. Daily line
-      mkChart('c-daily', {
-        type: 'line',
-        data: {
-          labels: dlabels,
-          datasets: [{
-            data: dvals,
-            borderColor: '#0a84ff',
-            backgroundColor: 'rgba(10,132,255,0.10)',
-            fill: true, tension: 0.3,
-            pointRadius: 0, pointHoverRadius: 3, borderWidth: 1.5
-          }]
-        },
-        options: {
-          responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
-          plugins: {
-            legend: { display: false },
-            tooltip: { callbacks: { label: c => ' ' + fmtK(c.raw) } }
+      if (days === 1) {
+        const hlabels = Array.from({ length: 24 }, (_, i) => i % 6 === 0 ? `${i}h` : '')
+        mkChart('c-daily', {
+          type: 'bar',
+          data: {
+            labels: hlabels,
+            datasets: [{
+              data: byHour,
+              backgroundColor: '#0a84ff99',
+              borderRadius: 2
+            }]
           },
-          scales: {
-            x: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, maxRotation: 0 } },
-            y: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, callback: v => fmtK(v) }, beginAtZero: true }
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: c => ' ' + fmtK(c.raw) } }
+            },
+            scales: {
+              x: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, maxRotation: 0 } },
+              y: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, callback: v => fmtK(v) }, beginAtZero: true }
+            }
           }
-        }
-      })
+        })
+      } else {
+        mkChart('c-daily', {
+          type: 'line',
+          data: {
+            labels: dlabels,
+            datasets: [{
+              data: dvals,
+              borderColor: '#0a84ff',
+              backgroundColor: 'rgba(10,132,255,0.10)',
+              fill: true, tension: 0.3,
+              pointRadius: 0, pointHoverRadius: 3, borderWidth: 1.5
+            }]
+          },
+          options: {
+            responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+            plugins: {
+              legend: { display: false },
+              tooltip: { callbacks: { label: c => ' ' + fmtK(c.raw) } }
+            },
+            scales: {
+              x: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, maxRotation: 0 } },
+              y: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, callback: v => fmtK(v) }, beginAtZero: true }
+            }
+          }
+        })
+      }
 
       // 2. Projects
       if (topProj.length) {
