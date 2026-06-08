@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Claude Usage</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4/dist/chart.umd.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body { height: 100%; overflow: hidden; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      background: rgba(28, 28, 30, 0.94);
+      color: #f2f2f7;
+      border-radius: 12px;
+      -webkit-app-region: no-drag;
+      user-select: none;
+    }
+
+    .scroll-container {
+      height: 100%;
+      overflow-y: auto;
+      border-radius: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: rgba(255,255,255,0.14) transparent;
+    }
+    .scroll-container::-webkit-scrollbar { width: 4px; }
+    .scroll-container::-webkit-scrollbar-track { background: transparent; }
+    .scroll-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 2px; }
+
+    /* ---- Sticky header ---- */
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(28, 28, 30, 0.96);
+      padding: 13px 16px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      -webkit-app-region: drag;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .sticky-header h1 {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ebebf5aa;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .updated {
+      font-size: 11px;
+      color: #ebebf544;
+      cursor: pointer;
+      -webkit-app-region: no-drag;
+    }
+    .updated:hover { color: #ebebf5aa; }
+
+    /* ---- Limits ---- */
+    .limits-section {
+      padding: 0 16px 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .limit-card {
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 11px 13px;
+    }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 7px;
+    }
+
+    .card-label {
+      font-size: 11px;
+      font-weight: 500;
+      color: #ebebf566;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    .card-pct {
+      font-size: 19px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+      line-height: 1;
+    }
+
+    .pct-low  { color: #30d158; }
+    .pct-mid  { color: #ffd60a; }
+    .pct-high { color: #ff9f0a; }
+    .pct-max  { color: #ff453a; }
+    .pct-none { color: #ebebf544; }
+
+    .progress-track {
+      height: 5px;
+      background: rgba(255,255,255,0.10);
+      border-radius: 3px;
+      overflow: hidden;
+      margin-bottom: 7px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      border-radius: 3px;
+      transition: width 0.4s ease;
+    }
+
+    .fill-low  { background: #30d158; }
+    .fill-mid  { background: #ffd60a; }
+    .fill-high { background: #ff9f0a; }
+    .fill-max  { background: #ff453a; }
+    .fill-none { background: rgba(255,255,255,0.15); }
+
+    .meta-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .reset-label { font-size: 12px; color: #ebebf5aa; }
+
+    .status-badge {
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      padding: 2px 6px;
+      border-radius: 4px;
+      -webkit-app-region: no-drag;
+    }
+    .badge-allowed_warning { background: rgba(255,159,10,0.18); color: #ff9f0a; }
+    .badge-throttled       { background: rgba(255,69,58,0.18);  color: #ff453a; }
+
+    .fallback-note {
+      font-size: 11px;
+      color: #ebebf544;
+      text-align: center;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .quit-btn {
+      font-size: 11px;
+      color: #ebebf544;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 3px 7px;
+      border-radius: 5px;
+      -webkit-app-region: no-drag;
+    }
+    .quit-btn:hover { color: #ff453a; background: rgba(255,69,58,0.12); }
+
+    .error-box {
+      background: rgba(255,69,58,0.12);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-size: 12px;
+      color: #ff6b6b;
+    }
+
+    .spinner {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      color: #ebebf544;
+      padding: 32px 0;
+    }
+
+    /* ---- Divider ---- */
+    .divider {
+      height: 1px;
+      background: rgba(255,255,255,0.08);
+      margin: 2px 16px 0;
+    }
+
+    /* ---- Analytics ---- */
+    .analytics-section {
+      padding: 10px 16px 18px;
+    }
+
+    .analytics-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+      -webkit-app-region: drag;
+    }
+
+    .analytics-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: #ebebf5aa;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .range-tabs {
+      display: flex;
+      gap: 2px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 6px;
+      padding: 2px;
+      -webkit-app-region: no-drag;
+    }
+
+    .range-tab {
+      font-size: 11px;
+      font-weight: 500;
+      color: #ebebf566;
+      background: none;
+      border: none;
+      padding: 2px 9px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .range-tab.active { background: rgba(255,255,255,0.13); color: #f2f2f7; }
+    .range-tab:hover:not(.active) { color: #ebebf5aa; }
+
+    #charts-root {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .chart-card {
+      background: rgba(255,255,255,0.06);
+      border-radius: 10px;
+      padding: 11px 13px;
+    }
+
+    .chart-title {
+      font-size: 10px;
+      font-weight: 500;
+      color: #ebebf544;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 9px;
+    }
+
+    .chart-card-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 9px;
+    }
+    .chart-card-header .chart-title { margin-bottom: 0; }
+
+    .seg-ctrl {
+      display: flex;
+      gap: 1px;
+      background: rgba(255,255,255,0.07);
+      border-radius: 5px;
+      padding: 2px;
+      -webkit-app-region: no-drag;
+    }
+    .seg-btn {
+      font-size: 10px;
+      font-weight: 500;
+      color: #ebebf566;
+      background: none;
+      border: none;
+      padding: 1px 7px;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    .seg-btn.active { background: rgba(255,255,255,0.13); color: #f2f2f7; }
+    .seg-btn:hover:not(.active) { color: #ebebf5aa; }
+
+    .chart-box {
+      position: relative;
+      height: 140px;
+    }
+
+    .charts-row {
+      display: flex;
+      gap: 8px;
+    }
+
+    .charts-row .chart-card { flex: 1; min-width: 0; }
+
+    .analytics-spinner {
+      text-align: center;
+      color: #ebebf544;
+      font-size: 12px;
+      padding: 30px 0;
+    }
+
+    button, a, .updated { -webkit-app-region: no-drag; }
+
+    .analytics-toggle {
+      font-size: 11px;
+      font-weight: 500;
+      color: #ebebf566;
+      background: rgba(255,255,255,0.07);
+      border: none;
+      padding: 3px 9px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .analytics-toggle:hover { color: #ebebf5aa; background: rgba(255,255,255,0.11); }
+    .analytics-toggle.active { color: #f2f2f7; background: rgba(255,255,255,0.14); }
+  </style>
+</head>
+<body>
+  <div class="scroll-container">
+
+    <div class="sticky-header">
+      <h1>Claude Usage</h1>
+      <div style="display:flex;align-items:center;gap:10px;-webkit-app-region:no-drag">
+        <button class="analytics-toggle" id="analytics-toggle">Show analytics</button>
+        <span class="updated" id="updated-label" title="Click to refresh"></span>
+      </div>
+    </div>
+
+    <div class="limits-section" id="limits-root">
+      <div class="spinner">Loading…</div>
+    </div>
+
+    <div class="divider" id="analytics-divider" style="display:none"></div>
+
+    <div class="analytics-section" id="analytics-section" style="display:none">
+      <div class="analytics-header">
+        <span class="analytics-title">Analytics</span>
+        <div class="range-tabs" id="range-tabs">
+          <button class="range-tab" data-days="7">7d</button>
+          <button class="range-tab active" data-days="30">30d</button>
+          <button class="range-tab" data-days="90">90d</button>
+        </div>
+      </div>
+      <div id="charts-root">
+        <div class="analytics-spinner">Loading…</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const GRID   = 'rgba(255,255,255,0.06)'
+    const TEXT   = 'rgba(235,235,245,0.5)'
+    const TLABEL = 'rgba(235,235,245,0.75)'
+    const TFONT  = { family: "-apple-system,'SF Pro Text',sans-serif", size: 10 }
+    const PAL    = ['#0a84ff','#30d158','#ff9f0a','#bf5af2','#ff453a','#64d2ff','#ffd60a','#ff6b6b','#5e5ce6','#32d74b']
+
+    let lastUpdatedAt = null
+    let currentDays = 30
+    let branchLimit = 10
+    let showAnalytics = false
+    let analyticsLoaded = false
+    let allBranches = []
+    const charts = {}
+    const BRANCH_EXCLUDE = new Set(['main', 'master', 'develop', 'HEAD', 'unknown'])
+
+    // ---- Util ----
+    function pctTier(p) {
+      if (!p) return 'none'
+      if (p >= 90) return 'max'
+      if (p >= 70) return 'high'
+      if (p >= 40) return 'mid'
+      return 'low'
+    }
+
+    function fmtCountdown(iso) {
+      if (!iso) return '—'
+      const ms = new Date(iso) - Date.now()
+      if (ms <= 0) return 'resetting…'
+      const m = Math.ceil(ms / 60_000)
+      const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), mm = m % 60
+      if (d > 0) return `resets in ${d}d ${h}h`
+      if (h > 0) return `resets in ${h}h ${mm}m`
+      return `resets in ${mm}m`
+    }
+
+    function fmtUpdated(iso) {
+      if (!iso) return ''
+      const s = Math.round((Date.now() - new Date(iso)) / 1000)
+      if (s < 5) return 'just now'
+      if (s < 60) return `${s}s ago`
+      return `${Math.round(s / 60)}m ago`
+    }
+
+    function fmtK(n) {
+      if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M'
+      if (n >= 1_000)     return (n / 1_000).toFixed(0) + 'k'
+      return String(n)
+    }
+
+    function topN(obj, n, fn = v => v) {
+      return Object.entries(obj)
+        .map(([k, v]) => [k, fn(v)])
+        .filter(([, v]) => v > 0)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, n)
+    }
+
+    // ---- Limits ----
+    function cardHtml(label, pct, resetAt, status) {
+      const tier  = pctTier(pct)
+      const label2 = pct != null ? `${pct}%` : '—'
+      const fill  = pct != null ? Math.min(pct, 100) : 0
+      const STATUS_LABEL = { rejected: 'limit reached', throttled: 'throttled', allowed_warning: 'near limit' }
+      const badge = status && status !== 'allowed' && status !== 'normal'
+        ? `<span class="status-badge badge-${status.toLowerCase()}">${STATUS_LABEL[status] ?? status.replace('_', ' ')}</span>`
+        : ''
+      return `
+        <div class="limit-card">
+          <div class="card-header">
+            <span class="card-label">${label}</span>
+            <span class="card-pct pct-${tier}">${label2}</span>
+          </div>
+          <div class="progress-track">
+            <div class="progress-fill fill-${tier}" style="width:${fill}%"></div>
+          </div>
+          <div class="meta-row">
+            <span class="reset-label">${fmtCountdown(resetAt)}</span>
+            ${badge}
+          </div>
+        </div>`
+    }
+
+    function renderLimits(data) {
+      const root = document.getElementById('limits-root')
+      if (!data) { root.innerHTML = '<div class="spinner">Loading…</div>'; return }
+
+      if (data.error && !data.session) {
+        root.innerHTML = `
+          <div class="error-box">${data.error}</div>
+          <div class="footer"><button class="quit-btn" onclick="window.claude.quit()">Quit</button></div>`
+        return
+      }
+
+      lastUpdatedAt = data.updatedAt
+      document.getElementById('updated-label').textContent = fmtUpdated(data.updatedAt)
+
+      const fallback = data.fallback?.available
+        ? `<div class="fallback-note">Fallback available · ${data.fallback.pct}% capacity</div>` : ''
+
+      root.innerHTML = `
+        ${cardHtml('Session · 5h',      data.session?.pct, data.session?.resetAt, data.session?.status)}
+        ${cardHtml('Weekly · 7d',       data.weekly?.pct,  data.weekly?.resetAt,  data.weekly?.status)}
+        ${cardHtml('Overage · billing', data.overage?.pct, data.overage?.resetAt, data.overage?.status)}
+        ${fallback}
+        <div class="footer"><button class="quit-btn" onclick="window.claude.quit()">Quit</button></div>`
+    }
+
+    // ---- Charts ----
+    function mkChart(id, cfg) {
+      if (charts[id]) { charts[id].destroy(); delete charts[id] }
+      const el = document.getElementById(id)
+      if (!el) return
+      charts[id] = new Chart(el.getContext('2d'), cfg)
+    }
+
+    const hbar = (labels, values, colors) => ({
+      type: 'bar',
+      data: {
+        labels,
+        datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, borderRadius: 3 }]
+      },
+      options: {
+        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+        animation: { duration: 300 },
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: c => ' ' + fmtK(c.raw) + ' tokens' } }
+        },
+        scales: {
+          x: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, callback: v => fmtK(v) }, beginAtZero: true },
+          y: { grid: { display: false }, ticks: { color: TLABEL, font: TFONT } }
+        }
+      }
+    })
+
+    function renderAnalytics(data, days) {
+      const root = document.getElementById('charts-root')
+      if (!data) { root.innerHTML = '<div class="analytics-spinner">No local session data found</div>'; return }
+
+      const { byProject, byBranch, byHour, byDay, byTool, bySkill, byModel } = data
+
+      // Daily series
+      const today = new Date()
+      const dlabels = [], dvals = []
+      for (let i = days - 1; i >= 0; i--) {
+        const d = new Date(today); d.setDate(d.getDate() - i)
+        const key = d.toISOString().split('T')[0]
+        dlabels.push(days <= 14 ? key.slice(5) : (i % 7 === 0 || i === 0 ? key.slice(5) : ''))
+        dvals.push(byDay[key] || 0)
+      }
+
+      const topProj   = topN(byProject, 8, v => v.output)
+      allBranches     = topN(byBranch, 50, v => v.output).filter(([b]) => !BRANCH_EXCLUDE.has(b))
+      const topTools  = topN(byTool,   10)
+      const topSkills = topN(bySkill,  10)
+
+
+      root.innerHTML = `
+        <div class="chart-card">
+          <div class="chart-title">Output tokens · daily</div>
+          <div class="chart-box"><canvas id="c-daily"></canvas></div>
+        </div>
+
+        ${topProj.length ? `<div class="chart-card">
+          <div class="chart-title">Output tokens · by project</div>
+          <div class="chart-box" style="height:${Math.max(90, topProj.length * 26)}px"><canvas id="c-proj"></canvas></div>
+        </div>` : ''}
+
+        ${allBranches.length ? `<div class="chart-card" id="branch-card">
+          <div class="chart-card-header">
+            <span class="chart-title">Output tokens · by branch</span>
+            <div class="seg-ctrl" id="branch-seg">
+              <button class="seg-btn ${branchLimit===10?'active':''}" data-n="10">10</button>
+              <button class="seg-btn ${branchLimit===25?'active':''}" data-n="25">25</button>
+              <button class="seg-btn ${branchLimit===50?'active':''}" data-n="50">50</button>
+            </div>
+          </div>
+          <div class="chart-box" id="branch-box"><canvas id="c-branch"></canvas></div>
+        </div>` : ''}
+
+        <div class="chart-card">
+          <div class="chart-title">Activity · time of day</div>
+          <div class="chart-box"><canvas id="c-hours"></canvas></div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-title">Tool use</div>
+          <div class="chart-box" style="height:170px"><canvas id="c-tools"></canvas></div>
+        </div>
+
+        ${topSkills.length ? `<div class="chart-card">
+          <div class="chart-title">Skills invoked</div>
+          <div class="chart-box" style="height:${Math.max(90, topSkills.length * 26)}px"><canvas id="c-skills"></canvas></div>
+        </div>` : ''}
+
+      `
+
+      // 1. Daily line
+      mkChart('c-daily', {
+        type: 'line',
+        data: {
+          labels: dlabels,
+          datasets: [{
+            data: dvals,
+            borderColor: '#0a84ff',
+            backgroundColor: 'rgba(10,132,255,0.10)',
+            fill: true, tension: 0.3,
+            pointRadius: 0, pointHoverRadius: 3, borderWidth: 1.5
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+          plugins: {
+            legend: { display: false },
+            tooltip: { callbacks: { label: c => ' ' + fmtK(c.raw) } }
+          },
+          scales: {
+            x: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, maxRotation: 0 } },
+            y: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, callback: v => fmtK(v) }, beginAtZero: true }
+          }
+        }
+      })
+
+      // 2. Projects
+      if (topProj.length) {
+        mkChart('c-proj', hbar(
+          topProj.map(([k]) => k),
+          topProj.map(([,v]) => v),
+          PAL.map(c => c + 'bb')
+        ))
+      }
+
+      // 3. Branches
+      function drawBranchChart(limit) {
+        const slice = allBranches.slice(0, limit)
+        const box = document.getElementById('branch-box')
+        if (box) box.style.height = Math.max(90, slice.length * 26) + 'px'
+        mkChart('c-branch', hbar(
+          slice.map(([k]) => k),
+          slice.map(([,v]) => v),
+          [...PAL].reverse().map(c => c + 'bb')
+        ))
+      }
+
+      const branchSeg = document.getElementById('branch-seg')
+      if (branchSeg) {
+        branchSeg.addEventListener('click', e => {
+          const btn = e.target.closest('.seg-btn')
+          if (!btn) return
+          branchSeg.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'))
+          btn.classList.add('active')
+          branchLimit = parseInt(btn.dataset.n)
+          drawBranchChart(branchLimit)
+        })
+      }
+
+      if (allBranches.length) drawBranchChart(branchLimit)
+
+      // 4. Time of day
+      const curHour = new Date().getHours()
+      mkChart('c-hours', {
+        type: 'bar',
+        data: {
+          labels: Array.from({ length: 24 }, (_, i) => i % 6 === 0 ? `${i}h` : ''),
+          datasets: [{
+            data: byHour,
+            backgroundColor: byHour.map((_, i) => i === curHour ? 'rgba(255,159,10,0.75)' : 'rgba(10,132,255,0.45)'),
+            borderWidth: 0, borderRadius: 2
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false, animation: { duration: 300 },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                title: c => `${c[0].dataIndex}:00–${c[0].dataIndex + 1}:00`,
+                label:  c => ' ' + fmtK(c.raw)
+              }
+            }
+          },
+          scales: {
+            x: { grid: { display: false }, ticks: { color: TEXT, font: TFONT } },
+            y: { grid: { color: GRID }, ticks: { color: TEXT, font: TFONT, callback: v => fmtK(v) }, beginAtZero: true }
+          }
+        }
+      })
+
+      // 5. Tool use doughnut
+      const donutOpts = (labels, values, colors) => ({
+        type: 'doughnut',
+        data: { labels, datasets: [{ data: values, backgroundColor: colors, borderWidth: 0, hoverOffset: 4 }] },
+        options: {
+          responsive: true, maintainAspectRatio: false, cutout: '62%', animation: { duration: 300 },
+          plugins: {
+            legend: {
+              display: true, position: 'bottom',
+              labels: { color: TEXT, font: TFONT, padding: 6, boxWidth: 8, boxHeight: 8 }
+            },
+            tooltip: { callbacks: { label: c => ` ${c.label}: ${c.raw.toLocaleString()}` } }
+          }
+        }
+      })
+
+      if (topTools.length) {
+        mkChart('c-tools', donutOpts(topTools.map(([k]) => k), topTools.map(([,v]) => v), PAL))
+      }
+
+
+      // 6. Skills
+      if (topSkills.length) {
+        const cfg = hbar(
+          topSkills.map(([k]) => '/' + k),
+          topSkills.map(([,v]) => v),
+          PAL.map((_, i) => PAL[(i + 4) % PAL.length] + 'bb')
+        )
+        cfg.options.plugins.tooltip.callbacks.label = c => ` ${c.raw} call${c.raw === 1 ? '' : 's'}`
+        cfg.options.scales.x.ticks.callback = v => Number.isInteger(v) ? v : ''
+        mkChart('c-skills', cfg)
+      }
+
+    }
+
+    // ---- Load ----
+    async function loadLimits() {
+      try { renderLimits(await window.claude.getUsage()) }
+      catch (e) { renderLimits({ error: e.message }) }
+      fitWindow()
+    }
+
+    async function loadAnalytics(days) {
+      document.getElementById('charts-root').innerHTML = '<div class="analytics-spinner">Loading…</div>'
+      try { renderAnalytics(await window.claude.getAnalytics(days), days) }
+      catch (e) { document.getElementById('charts-root').innerHTML = `<div class="analytics-spinner">Error: ${e.message}</div>` }
+      fitWindow(100) // slight delay for chart boxes to settle
+    }
+
+    // ---- Range tabs ----
+    document.getElementById('range-tabs').addEventListener('click', e => {
+      const btn = e.target.closest('.range-tab')
+      if (!btn) return
+      document.querySelectorAll('.range-tab').forEach(b => b.classList.remove('active'))
+      btn.classList.add('active')
+      currentDays = parseInt(btn.dataset.days)
+      analyticsLoaded = false
+      loadAnalytics(currentDays)
+    })
+
+    // ---- IPC ----
+    window.claude.onRefresh(() => loadLimits())
+
+    function fitWindow(delay = 0) {
+      setTimeout(() => {
+        let h = 0
+        for (const child of document.querySelector('.scroll-container').children) {
+          h += child.offsetHeight
+        }
+        window.claude.setHeight(Math.min(Math.max(h, 280), 900))
+      }, delay)
+    }
+
+    // Analytics toggle
+    document.getElementById('analytics-toggle').addEventListener('click', () => {
+      showAnalytics = !showAnalytics
+      const toggle = document.getElementById('analytics-toggle')
+      toggle.textContent = showAnalytics ? 'Hide analytics' : 'Show analytics'
+      toggle.classList.toggle('active', showAnalytics)
+      document.getElementById('analytics-divider').style.display = showAnalytics ? '' : 'none'
+      document.getElementById('analytics-section').style.display = showAnalytics ? '' : 'none'
+      if (!showAnalytics) fitWindow()
+      if (showAnalytics && !analyticsLoaded) {
+        analyticsLoaded = true
+        loadAnalytics(currentDays)
+      }
+    })
+
+    // Updated-label wired up once (element is always present in sticky header)
+    document.getElementById('updated-label').addEventListener('click', async () => {
+      document.getElementById('updated-label').textContent = 'refreshing…'
+      await window.claude.refreshNow()
+    })
+
+    // Tick "Xs ago"
+    setInterval(() => {
+      if (lastUpdatedAt) document.getElementById('updated-label').textContent = fmtUpdated(lastUpdatedAt)
+    }, 10_000)
+
+    // Init
+    loadLimits()
+  </script>
+</body>
+</html>

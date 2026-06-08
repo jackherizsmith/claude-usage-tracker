@@ -1,0 +1,6 @@
+node_modules/
+dist/
+build/icon.icns
+build/icons/
+*.log
+.DS_Store

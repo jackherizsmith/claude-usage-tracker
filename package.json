@@ -1,0 +1,41 @@
+{
+  "name": "claude-usage-tracker",
+  "version": "1.0.0",
+  "description": "Track Claude Code session usage in macOS menu bar",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "node scripts/create-icon.js && electron-builder --mac",
+    "build:dmg": "node scripts/create-icon.js && electron-builder --mac dmg",
+    "release": "node scripts/create-icon.js && electron-builder --mac --publish=never"
+  },
+  "build": {
+    "appId": "co.sourcerie.claude-usage-tracker",
+    "productName": "Claude Usage",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "index.html"
+    ],
+    "mac": {
+      "category": "public.app-category.productivity",
+      "icon": "build/icon.png",
+      "target": [
+        {"target": "dmg", "arch": ["universal"]},
+        {"target": "zip", "arch": ["universal"]}
+      ],
+      "identity": null
+    },
+    "dmg": {
+      "title": "Claude Usage",
+      "window": {"width": 480, "height": 300}
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^26.15.2"
+  }
+}
