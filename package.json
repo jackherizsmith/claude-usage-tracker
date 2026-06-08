@@ -1,6 +1,6 @@
 {
   "name": "claude-usage-tracker",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "Track Claude Code session usage in macOS menu bar",
   "scripts": {
     "dev": "tauri dev",
