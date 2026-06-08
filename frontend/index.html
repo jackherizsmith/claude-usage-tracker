@@ -16,12 +16,14 @@
       border-radius: 12px;
       -webkit-app-region: no-drag;
       user-select: none;
+      display: flex;
+      flex-direction: column;
     }
 
     .scroll-container {
-      height: 100%;
+      flex: 1;
       overflow-y: auto;
-      border-radius: 12px;
+      border-radius: 0 0 12px 12px;
       scrollbar-width: thin;
       scrollbar-color: rgba(255,255,255,0.14) transparent;
     }
@@ -29,11 +31,8 @@
     .scroll-container::-webkit-scrollbar-track { background: transparent; }
     .scroll-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.14); border-radius: 2px; }
 
-    /* ---- Sticky header ---- */
+    /* ---- Header ---- */
     .sticky-header {
-      position: sticky;
-      top: 0;
-      z-index: 10;
       background: rgba(28, 28, 30, 0.96);
       padding: 13px 16px 10px;
       display: flex;
@@ -41,6 +40,7 @@
       justify-content: space-between;
       -webkit-app-region: drag;
       border-radius: 12px 12px 0 0;
+      flex-shrink: 0;
     }
 
     .sticky-header h1 {
@@ -317,15 +317,15 @@
   </style>
 </head>
 <body>
-  <div class="scroll-container">
-
-    <div class="sticky-header">
-      <h1>Claude Usage</h1>
-      <div style="display:flex;align-items:center;gap:10px;-webkit-app-region:no-drag">
-        <button class="analytics-toggle" id="analytics-toggle">Show analytics</button>
-        <span class="updated" id="updated-label" title="Click to refresh"></span>
-      </div>
+  <div class="sticky-header" data-tauri-drag-region>
+    <h1>Claude Usage</h1>
+    <div style="display:flex;align-items:center;gap:10px;-webkit-app-region:no-drag">
+      <button class="analytics-toggle" id="analytics-toggle">Show analytics</button>
+      <span class="updated" id="updated-label" title="Click to refresh"></span>
     </div>
+  </div>
+
+  <div class="scroll-container">
 
     <div class="limits-section" id="limits-root">
       <div class="spinner">Loading…</div>
@@ -348,6 +348,7 @@
     </div>
 
   </div>
+
 
   <script>
     const { invoke } = window.__TAURI__.core
@@ -706,7 +707,7 @@
 
     function fitWindow(delay = 0) {
       setTimeout(() => {
-        let h = 0
+        let h = document.querySelector('.sticky-header').offsetHeight
         for (const child of document.querySelector('.scroll-container').children) {
           h += child.offsetHeight
         }
