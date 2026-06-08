@@ -643,13 +643,37 @@ pub fn run() {
                             if win.is_visible().unwrap_or(false) {
                                 let _ = win.hide();
                             } else {
-                                if let Ok(scale) = win.scale_factor() {
-                                    let lx = position.x / scale - 190.0;
-                                    let ly = position.y / scale + 10.0;
-                                    let _ = win.set_position(tauri::Position::Logical(
-                                        tauri::LogicalPosition { x: lx, y: ly },
-                                    ));
-                                }
+                                let scale = win.scale_factor().unwrap_or(1.0);
+                                let win_h = win.outer_size()
+                                    .map(|s| s.height as f64)
+                                    .unwrap_or(600.0);
+                                let win_w = win.outer_size()
+                                    .map(|s| s.width as f64)
+                                    .unwrap_or(380.0);
+
+                                // Find the vertical midpoint of the screen the tray is on,
+                                // so we can tell whether the tray bar is at the top (macOS)
+                                // or the bottom (Windows/Linux taskbar).
+                                let screen_mid_y = win.primary_monitor()
+                                    .ok()
+                                    .flatten()
+                                    .map(|m| {
+                                        m.position().y as f64 + m.size().height as f64 / 2.0
+                                    })
+                                    .unwrap_or(500.0);
+
+                                let lx = position.x / scale - win_w / (2.0 * scale);
+                                let ly = if position.y < screen_mid_y {
+                                    // Tray at top — show window below (macOS)
+                                    position.y / scale + 10.0
+                                } else {
+                                    // Tray at bottom — show window above (Windows/Linux)
+                                    (position.y - win_h) / scale - 10.0
+                                };
+
+                                let _ = win.set_position(tauri::Position::Logical(
+                                    tauri::LogicalPosition { x: lx, y: ly },
+                                ));
                                 let _ = win.show();
                                 let _ = win.set_focus();
                                 let _ = app.emit("refresh", ());
