@@ -4,7 +4,7 @@
   "description": "Track Claude Code session usage in macOS menu bar",
   "scripts": {
     "dev": "tauri dev",
-    "build": "source $HOME/.cargo/env && node scripts/create-icon.js && tauri icon build/icon.png && tauri build",
+    "build": "node scripts/create-icon.js && npx tauri icon build/icon.png && npx tauri build",
     "start": "tauri dev"
   },
   "devDependencies": {

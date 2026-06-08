@@ -263,7 +263,7 @@ async fn fetch_and_cache(app: &AppHandle) {
             overage: LimitInfo { pct: None, reset_at: None, status: "allowed".to_string() },
             fallback: FallbackInfo { available: false, pct: 0 },
             updated_at: Utc::now().to_rfc3339(),
-            error: Some("No Claude Code token found in Keychain".to_string()),
+            error: Some("No Claude Code token found — is Claude Code installed and signed in?".to_string()),
         },
         Some(t) => match poll_usage(&t, &state.client).await {
             Ok(data) => data,
@@ -286,7 +286,8 @@ async fn fetch_and_cache(app: &AppHandle) {
         },
     };
 
-    // Update tray title
+    // Update tray title (macOS only — set_title is not available on Windows/Linux)
+    #[cfg(target_os = "macos")]
     if let Some(tray) = app.tray_by_id("main") {
         let title = match (result.session.pct, result.weekly.pct) {
             (Some(s), Some(w)) => format!(" {}% ({}%)", s, w),
@@ -622,11 +623,14 @@ pub fn run() {
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
 
-            let tray = tauri::tray::TrayIconBuilder::with_id("main")
-                .icon(create_tray_icon())
-                .icon_as_template(true)
-                .title(" –")
-                .on_tray_icon_event(move |tray, event| {
+            let tray_builder = tauri::tray::TrayIconBuilder::with_id("main")
+                .icon(create_tray_icon());
+
+            // set_title / icon_as_template are macOS-only in Tauri's tray API
+            #[cfg(target_os = "macos")]
+            let tray_builder = tray_builder.icon_as_template(true).title(" –");
+
+            let tray = tray_builder.on_tray_icon_event(move |tray, event| {
                     if let tauri::tray::TrayIconEvent::Click {
                         button: tauri::tray::MouseButton::Left,
                         button_state: tauri::tray::MouseButtonState::Up,

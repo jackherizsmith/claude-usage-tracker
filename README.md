@@ -1,43 +1,72 @@
 # Claude Usage
 
-macOS menu bar app that shows your Claude Code session and weekly usage limits in real time.
-
-![Menu bar showing 47% (70%)](https://github.com/user-attachments/assets/placeholder)
+macOS, Windows, and Linux menu bar / system tray app that shows your Claude Code session and weekly usage limits in real time.
 
 ## What it shows
 
 - **Session (5h)** — current utilisation % and time until reset
-- **Weekly (7d)** — weekly utilisation % and time until reset  
+- **Weekly (7d)** — weekly utilisation % and time until reset
 - **Overage** — billing-cycle overage if you have a cap configured
-- **Analytics** (toggle) — local breakdown of token usage by project, branch, time of day, tool use, and skills
+- **Analytics** (toggle) — local breakdown of token usage by project, branch, time of day, tool use, and skills — for the last 24h, 7d, or 30d
 
-The menu bar title shows `47% (70%)` — session % and weekly % at a glance.
+On macOS, the tray title shows `47% (70%)` — session % and weekly % at a glance.
 
 ## Requirements
 
-- macOS 12 or later
-- [Claude Code](https://claude.ai/code) installed and signed in (the app reads your OAuth token from Keychain — no separate auth needed)
+- [Claude Code](https://claude.ai/code) installed and signed in on the same machine
 
 ## Install
 
-1. Download `Claude Usage-x.x.x-universal.dmg` from the [latest release](https://github.com/jackherizsmith/claude-usage-tracker/releases/latest)
-2. Open the DMG and drag **Claude Usage** to your Applications folder
-3. Open Terminal and run:
+Download the latest release for your platform from [Releases](https://github.com/jackherizsmith/claude-usage-tracker/releases/latest).
+
+### macOS (Apple Silicon)
+
+1. Download `Claude.Usage_*_aarch64.dmg`
+2. Open the DMG and drag **Claude Usage** to Applications
+3. Remove the quarantine flag (required for unsigned apps):
    ```
    sudo xattr -cr "/Applications/Claude Usage.app"
    ```
-4. Open the app — the Gatekeeper warning won't appear again after this
+4. Open the app — it will appear in your menu bar
 
-The app lives in your menu bar and auto-starts on login.
+### macOS (Intel)
+
+Same as above, but download `Claude.Usage_*_x86_64.dmg`.
+
+### Windows
+
+1. Download `Claude.Usage_*_x64-setup.exe`
+2. Run the installer
+3. If Windows SmartScreen shows a warning, click **More info → Run anyway**
+
+The app appears in the system tray (bottom-right notification area).
+
+### Linux
+
+1. Download `claude-usage_*_amd64.AppImage`
+2. Make it executable and run:
+   ```
+   chmod +x claude-usage_*.AppImage
+   ./claude-usage_*.AppImage
+   ```
+
+The app appears in the system tray. Requires a desktop environment with tray support (GNOME, KDE, XFCE, etc.).
 
 ## Build from source
 
+Requires [Rust](https://rustup.rs), Node.js 20+, and platform-specific Tauri dependencies.
+
+**Linux** — install system dependencies first:
+```bash
+sudo apt-get install -y libgtk-3-dev libwebkit2gtk-4.1-dev libayatana-appindicator3-dev librsvg2-dev
+```
+
+**All platforms:**
 ```bash
 git clone https://github.com/jackherizsmith/claude-usage-tracker
 cd claude-usage-tracker
 npm install
-npm start          # run in dev mode
-npm run build      # build DMG + ZIP to dist/
+npm run build        # produces platform-native bundle in src-tauri/target/release/bundle/
 ```
 
-Requires Node.js 18+ and npm.
+For local development with hot reload: `npm run dev`

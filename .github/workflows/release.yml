@@ -1,0 +1,93 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest        # Apple Silicon
+            args: --target aarch64-apple-darwin
+            rust-target: aarch64-apple-darwin
+          - platform: macos-13            # Intel
+            args: --target x86_64-apple-darwin
+            rust-target: x86_64-apple-darwin
+          - platform: ubuntu-22.04
+            args: ''
+            rust-target: ''
+          - platform: windows-latest
+            args: ''
+            rust-target: ''
+
+    runs-on: ${{ matrix.platform }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Linux system dependencies
+        if: matrix.platform == 'ubuntu-22.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libgtk-3-dev \
+            libwebkit2gtk-4.1-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.rust-target }}
+
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - run: npm install
+
+      - name: Generate icons
+        run: node scripts/create-icon.js && npx tauri icon build/icon.png
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          APPLE_SIGNING_IDENTITY: '-'
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: ${{ github.ref_name }}
+          releaseBody: |
+            ## Install
+
+            | Platform | Download |
+            |----------|---------|
+            | macOS (Apple Silicon) | `Claude.Usage_*_aarch64.dmg` |
+            | macOS (Intel) | `Claude.Usage_*_x86_64.dmg` |
+            | Windows | `Claude.Usage_*_x64-setup.exe` |
+            | Linux | `claude-usage_*_amd64.AppImage` |
+
+            **macOS** — after installing, remove the quarantine flag:
+            ```
+            sudo xattr -cr "/Applications/Claude Usage.app"
+            ```
+
+            **Windows** — if SmartScreen blocks it, click *More info → Run anyway*.
+
+            **Linux** — make the AppImage executable then run it:
+            ```
+            chmod +x claude-usage_*.AppImage && ./claude-usage_*.AppImage
+            ```
+
+            Requires [Claude Code](https://claude.ai/code) to be installed and signed in.
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+          tauriScript: npx tauri
