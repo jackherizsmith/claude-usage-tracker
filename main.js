@@ -292,12 +292,21 @@ async function fetchAndCache() {
   }
 }
 
+function remainingDots(resetAt, unitMs) {
+  if (!resetAt) return ''
+  const remaining = new Date(resetAt).getTime() - Date.now()
+  if (remaining <= 0) return ''
+  return '.'.repeat(Math.floor(remaining / unitMs) + 1)
+}
+
 function updateTrayTitle() {
   if (!tray) return
   const s = cachedData?.session?.pct
   const w = cachedData?.weekly?.pct
   if (s == null) { tray.setTitle(' –'); return }
-  tray.setTitle(w != null ? ` ${s}% (${w}%)` : ` ${s}%`)
+  const sDots = remainingDots(cachedData.session.resetAt, 60 * 60 * 1000)
+  const wDots = remainingDots(cachedData.weekly.resetAt, 24 * 60 * 60 * 1000)
+  tray.setTitle(w != null ? ` ${s}%${sDots} (${w}%${wDots})` : ` ${s}%${sDots}`)
 }
 
 function positionWindow(win) {
