@@ -325,7 +325,7 @@ dependencies = [
 
 [[package]]
 name = "claude-usage"
-version = "2.1.4"
+version = "2.1.5"
 dependencies = [
  "chrono",
  "dirs 5.0.1",
