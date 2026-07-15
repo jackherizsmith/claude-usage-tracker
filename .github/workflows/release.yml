@@ -70,7 +70,7 @@ jobs:
             | Platform | Download |
             |----------|---------|
             | macOS (Apple Silicon) | `Claude.Usage_*_aarch64.dmg` |
-            | macOS (Intel) | `Claude.Usage_*_x86_64.dmg` |
+            | macOS (Intel) | `Claude.Usage_*_x64.dmg` |
             | Windows | `Claude.Usage_*_x64-setup.exe` |
             | Linux | `claude-usage_*_amd64.AppImage` |
 
